@@ -124,15 +124,26 @@ def buscar_coordenadas(
     nome_informado = _normalizar_nome_local(cidade)
     # Se a UF digitada não bate com nenhum resultado, aceita a cidade de mesmo nome em outra UF
     # e devolve a UF real (admin1). Ex.: Teresina + RJ -> Teresina - PI.
-    candidatos = resultados_uf or resultados
-    escolhido = next(
-        (item for item in candidatos if _normalizar_nome_local(re.sub(r"\(.*?\)", "", str(item.get("name", "")))) == nome_informado),
-        None,
-    )
+    def _exatos(lista: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [
+            item for item in lista
+            if _normalizar_nome_local(re.sub(r"\(.*?\)", "", str(item.get("name", "")))) == nome_informado
+        ]
+
+    exatos_uf = _exatos(resultados_uf)
+    escolhido = None
+    if exatos_uf:
+        escolhido = exatos_uf[0]
+    elif not resultados_uf:
+        # UF digitada não bate com nenhum resultado: só aceita a cidade de outra UF se o nome for único
+        # (ex.: Teresina + RJ -> Teresina - PI). Nome repetido em vários estados é ambíguo e não é adivinhado.
+        outros = _exatos(resultados)
+        escolhido = outros[0] if len(outros) == 1 else None
     if escolhido is None:
-        # Sem nome idêntico: aceita nome parecido, mas só dentro da UF informada
-        # (ex.: digitou "Fernando de Noronha" e a API devolveu "Noronha" ou "Arquipélago de Fernando de Noronha").
-        escolhido = next((item for item in resultados_uf if _nomes_parecidos(nome_informado, item)), None)
+        # Sem nome idêntico: aceita nome parecido dentro da UF informada, só se houver um único candidato
+        # (ex.: "Fernando de Noronha" e a API devolveu "Noronha" ou "Arquipélago de Fernando de Noronha").
+        parecidos = [item for item in resultados_uf if _nomes_parecidos(nome_informado, item)]
+        escolhido = parecidos[0] if len(parecidos) == 1 else None
     if escolhido is None:
         return fallback
     detectada = obter_sigla_uf(str(escolhido.get("admin1", "")), uf)
@@ -260,7 +271,8 @@ def calcular_gerenciador_paradas(
 
     paradas_abast = math.floor(distancia_total_km / autonomia_util)
     paradas_descanso = math.floor(tempo_total_min / 150)
-    paradas_alimentacao = math.floor(tempo_total_min / 270) if tempo_total_min > 240 else 0
+    # Viagens acima de 4h têm ao menos 1 refeição; depois, 1 a cada 4,5h (270 min).
+    paradas_alimentacao = max(1, math.floor(tempo_total_min / 270)) if tempo_total_min > 240 else 0
     tempo_paradas = paradas_abast * 15 + paradas_descanso * 20 + paradas_alimentacao * 45
 
     partes = [f"Partida com {resultado['tanque_inicial']}."]

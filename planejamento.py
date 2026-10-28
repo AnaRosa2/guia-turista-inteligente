@@ -57,6 +57,10 @@ def _guia_fallback(destino: str, contexto: str = "") -> str:
         f"📍 Pesquise e visite os pontos históricos, culturais e naturais de {destino}.\n\n"
         "🍲 CULINÁRIA LOCAL\n"
         f"🍽️ Experimente pratos típicos e prestigie restaurantes locais de {destino}.\n\n"
+        "🎭 CULTURA E EVENTOS\n"
+        f"🎉 Consulte a agenda de festas, feiras e tradições locais de {destino}.\n\n"
+        "🌦️ MELHOR ÉPOCA E CLIMA\n"
+        f"Verifique a previsão do tempo e a melhor época para visitar {destino}.\n\n"
     )
     if contexto:
         texto += f"🚗 DICAS PARA A VIAGEM\n🧭 {contexto}\n\n"
@@ -67,7 +71,7 @@ def _guia_fallback(destino: str, contexto: str = "") -> str:
 
 
 def obter_guia_destino_com_diagnostico(destino: str, contexto: str = "") -> tuple[str, dict[str, Any]]:
-    """Invoca o modelo Gemini com limite operacional (GEMINI_TIMEOUT, padrão 6.0s) em ThreadPoolExecutor.
+    """Invoca o modelo Gemini com limite operacional (GEMINI_TIMEOUT, padrão 30.0s; o enunciado cita 6.0s) em ThreadPoolExecutor.
 
     `contexto` é opcional: clima, distância e paradas reais da viagem, para deixar o guia mais detalhado.
     Em caso de timeout, chave inválida ou ausência de cota, aciona automaticamente
