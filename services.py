@@ -135,10 +135,11 @@ def buscar_coordenadas(
     if exatos_uf:
         escolhido = exatos_uf[0]
     elif not resultados_uf:
-        # UF digitada não bate com nenhum resultado: só aceita a cidade de outra UF se o nome for único
-        # (ex.: Teresina + RJ -> Teresina - PI). Nome repetido em vários estados é ambíguo e não é adivinhado.
+        # UF digitada não bate com nenhum resultado: aceita a cidade de mesmo nome em outra UF e devolve a UF
+        # real (admin1). Ex.: Teresina + RJ -> Teresina - PI (teste 5 do enunciado). Se o nome existir em vários
+        # estados, escolhe o mais populoso (a API ordena por relevância; em empate, vale o primeiro).
         outros = _exatos(resultados)
-        escolhido = outros[0] if len(outros) == 1 else None
+        escolhido = max(outros, key=lambda item: float(item.get("population") or 0)) if outros else None
     if escolhido is None:
         # Sem nome idêntico: aceita nome parecido dentro da UF informada, só se houver um único candidato
         # (ex.: "Fernando de Noronha" e a API devolveu "Noronha" ou "Arquipélago de Fernando de Noronha").

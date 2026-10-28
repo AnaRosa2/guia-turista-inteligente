@@ -107,7 +107,7 @@ def obter_guia_destino_com_diagnostico(destino: str, contexto: str = "") -> tupl
         texto, modelo = futuro.result(timeout=GEMINI_TIMEOUT)
         diagnostico.update({"status": "sucesso", "modelo": modelo, "fallback_utilizado": False})
         return texto, diagnostico
-    except (APIError, RuntimeError, TimeoutError, ValueError, OSError) as erro:
+    except Exception as erro:  # noqa: BLE001 - qualquer falha (rede, chave, cota, timeout) vira fallback, nunca HTTP 500
         futuro.cancel()
         diagnostico["mensagem"] = str(erro)[:200] or "Tempo limite excedido"
         return _guia_fallback(destino, contexto), diagnostico
